@@ -8,16 +8,19 @@ const auth = require('../middleware/authMiddleware');
 // POST /login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
     if (rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'Invalid credentials' });
     }
+
     const user = rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'Invalid credentials' });
     }
+
     const payload = {
       user: {
         id: user.id,
@@ -25,18 +28,17 @@ router.post('/login', async (req, res) => {
         name: user.name
       }
     };
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5m' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token });
+
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '5m' }, (err, token) => {
+      if (err) {
+        console.error(err.message);
+        return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
       }
-    );
+      return res.status(200).json({ ok: true, statusCode: 200, token });
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
@@ -65,26 +67,26 @@ router.get('/cm-users', auth, async (req, res) => {
 //   }
 // });
 
-router.post('/cm-users', auth,async (req, res) => {
+router.post('/cm-users', auth, async (req, res) => {
   const { name, hospcode, cid, contact, address } = req.body;
 
-  if (name == null) return res.status(400).json({ message: 'name is null' });
-  if (hospcode == null) return res.status(400).json({ message: 'hospcode is null' });
-  if (cid == null) return res.status(400).json({ message: 'cid is null' });
-  if (contact == null) return res.status(400).json({ message: 'contact is null' });
-  if (address == null) return res.status(400).json({ message: 'address is null' });
+  if (name == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'name is null' });
+  if (hospcode == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'hospcode is null' });
+  if (cid == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'cid is null' });
+  if (contact == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'contact is null' });
+  if (address == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'address is null' });
 
   const hospcodeStr = typeof hospcode === 'string' ? hospcode.trim() : String(hospcode).trim();
   const cidStr = typeof cid === 'string' ? cid.trim() : String(cid).trim();
 
   if (!/^[0-9]+$/.test(hospcodeStr)) {
-    return res.status(400).json({ message: 'hospcode must contain digits 0-9 only' });
+    return res.status(400).json({ ok: false, statusCode: 400, message: 'hospcode must contain digits 0-9 only' });
   }
   if (!/^[0-9]+$/.test(cidStr)) {
-    return res.status(400).json({ message: 'cid must contain digits 0-9 only' });
+    return res.status(400).json({ ok: false, statusCode: 400, message: 'cid must contain digits 0-9 only' });
   }
   if (cidStr.length !== 13) {
-    return res.status(400).json({ message: 'cid must be exactly 13 digits (0-9)' });
+    return res.status(400).json({ ok: false, statusCode: 400, message: 'cid must be exactly 13 digits (0-9)' });
   }
 
   try {
@@ -94,10 +96,21 @@ router.post('/cm-users', auth,async (req, res) => {
       'INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type, d_update) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
       [name, hospcodeStr, cidStr, contact, address, user_status, user_type]
     );
-    res.json({ id: result.insertId, name, hospcode: hospcodeStr, contact, address });
+    return res.status(201).json({
+      ok: true,
+      statusCode: 201,
+      // id: result.insertId,
+      name,
+      hospcode: hospcodeStr,
+      contact,
+      address,
+      user_type,
+      d_update: new Date(),
+      user_status
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
