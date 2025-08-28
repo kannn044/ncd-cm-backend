@@ -91,7 +91,7 @@ router.post('/cm-users', async (req, res) => {
     const user_status = 'activate';
     const user_type = 'doctor';
     const [result] = await db.query(
-      'INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type, d_update) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())',
       [name, hospcodeStr, cidStr, contact, address, user_status, user_type]
     );
     res.json({ id: result.insertId, name, hospcode: hospcodeStr, contact, address });
