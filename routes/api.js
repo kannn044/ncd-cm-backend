@@ -52,20 +52,20 @@ router.get('/cm-users', auth, async (req, res) => {
 });
 
 // POST /users
-router.post('/users', async (req, res) => {
-  const { name, email, password } = req.body;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
-    res.json({ id: result.insertId, name, email });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  }
-});
+// router.post('/users', async (req, res) => {
+//   const { name, email, password } = req.body;
+//   try {
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+//     const [result] = await db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
+//     res.json({ id: result.insertId, name, email });
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send('Server error');
+//   }
+// });
 
-router.post('/cm-users', async (req, res) => {
+router.post('/cm-users', auth,async (req, res) => {
   const { name, hospcode, cid, contact, address } = req.body;
 
   if (name == null) return res.status(400).json({ message: 'name is null' });
