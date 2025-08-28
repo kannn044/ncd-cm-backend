@@ -74,14 +74,27 @@ router.post('/cm-users', async (req, res) => {
   if (contact == null) return res.status(400).json({ message: 'contact is null' });
   if (address == null) return res.status(400).json({ message: 'address is null' });
 
+  const hospcodeStr = typeof hospcode === 'string' ? hospcode.trim() : String(hospcode).trim();
+  const cidStr = typeof cid === 'string' ? cid.trim() : String(cid).trim();
+
+  if (!/^[0-9]+$/.test(hospcodeStr)) {
+    return res.status(400).json({ message: 'hospcode must contain digits 0-9 only' });
+  }
+  if (!/^[0-9]+$/.test(cidStr)) {
+    return res.status(400).json({ message: 'cid must contain digits 0-9 only' });
+  }
+  if (cidStr.length !== 13) {
+    return res.status(400).json({ message: 'cid must be exactly 13 digits (0-9)' });
+  }
+
   try {
     const user_status = 'activate';
     const user_type = 'doctor';
     const [result] = await db.query(
       'INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, hospcode, cid, contact, address, user_status, user_type]
+      [name, hospcodeStr, cidStr, contact, address, user_status, user_type]
     );
-    res.json({ id: result.insertId, name, hospcode, contact, address });
+    res.json({ id: result.insertId, name, hospcode: hospcodeStr, contact, address });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
