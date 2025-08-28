@@ -20,13 +20,15 @@ router.post('/login', async (req, res) => {
     }
     const payload = {
       user: {
-        id: user.id
+        id: user.id,
+        email: user.email,
+        name: user.name
       }
     };
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: 3600 },
+      { expiresIn: '5m' },
       (err, token) => {
         if (err) throw err;
         res.json({ token });
@@ -67,7 +69,7 @@ router.post('/cm-users', async (req, res) => {
   const { name, hospcode, cid, contact, address } = req.body;
   try {
     user_status = 'activate'
-    user_type  = 'doctor'
+    user_type = 'doctor'
     const [result] = await db.query('INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, hospcode, cid, contact, address, user_status, user_type]);
     res.json({ id: result.insertId, name, hospcode, contact, address });
   } catch (err) {
@@ -91,13 +93,13 @@ router.put('/cm-users/:id', auth, async (req, res) => {
 
 // DELETE /users/:id
 router.delete('/cm-users/:id', auth, async (req, res) => {
-    try {
-        await db.query('DELETE FROM cm_users WHERE id = ?', [req.params.id]);
-        res.json({ message: 'User deleted' });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
-    }
+  try {
+    await db.query('DELETE FROM cm_users WHERE id = ?', [req.params.id]);
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
 });
 
 module.exports = router;
