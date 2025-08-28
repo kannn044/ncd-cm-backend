@@ -67,10 +67,20 @@ router.post('/users', async (req, res) => {
 
 router.post('/cm-users', async (req, res) => {
   const { name, hospcode, cid, contact, address } = req.body;
+
+  if (name == null) return res.status(400).json({ message: 'name is null' });
+  if (hospcode == null) return res.status(400).json({ message: 'hospcode is null' });
+  if (cid == null) return res.status(400).json({ message: 'cid is null' });
+  if (contact == null) return res.status(400).json({ message: 'contact is null' });
+  if (address == null) return res.status(400).json({ message: 'address is null' });
+
   try {
-    user_status = 'activate'
-    user_type = 'doctor'
-    const [result] = await db.query('INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)', [name, hospcode, cid, contact, address, user_status, user_type]);
+    const user_status = 'activate';
+    const user_type = 'doctor';
+    const [result] = await db.query(
+      'INSERT INTO cm_users (name, hospcode, cid, contact, address, status, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, hospcode, cid, contact, address, user_status, user_type]
+    );
     res.json({ id: result.insertId, name, hospcode, contact, address });
   } catch (err) {
     console.error(err.message);
