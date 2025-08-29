@@ -1,2 +1,22 @@
 {"level":"info","message":"Server is running on port 3011"}
 {"level":"info","message":"Database connected successfully"}
+{"level":"info","message":"Server is running on port 3011"}
+{"level":"info","message":"Database connected successfully"}
+{"level":"info","message":"Server is running on port 3011"}
+{"level":"info","message":"Database connected successfully"}
+{"level":"info","message":"Login attempt for email: test@gmail.com"}
+{"level":"info","message":"Login successful for email: test@gmail.com"}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"Login attempt for email: test@gmail.com"}
+{"level":"info","message":"Login successful for email: test@gmail.com"}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"Login attempt for email: test@gmail.com"}
+{"level":"info","message":"Login successful for email: test@gmail.com"}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"GET /cm-users","query":{"limit":"5","order":"desc","page":"1","sort":"d_update"}}
+{"level":"info","message":"Server is running on port 3011"}
+{"level":"info","message":"Database connected successfully"}

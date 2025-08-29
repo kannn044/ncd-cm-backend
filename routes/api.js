@@ -7,6 +7,11 @@ const auth = require('../middleware/authMiddleware');
 const uuid = require('uuid');
 const logger = require('../utils/logger');
 
+router.get('/', (req, res) => {
+    res.json({ message: 'API is running from /api route' }); // You can change the message
+    logger.info('API /api route is running');
+});
+
 // POST /login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
