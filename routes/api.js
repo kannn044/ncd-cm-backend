@@ -5,20 +5,24 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const auth = require('../middleware/authMiddleware');
 const uuid = require('uuid');
+const logger = require('../utils/logger');
 
 // POST /login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  logger.info(`Login attempt for email: ${email}`);
 
   try {
     const [rows] = await db.query('SELECT * FROM account WHERE email = ?', [email]);
     if (rows.length === 0) {
+      logger.warn(`Login failed for email: ${email} - Invalid credentials`);
       return res.status(400).json({ ok: false, statusCode: 400, message: 'Invalid credentials' });
     }
 
     const user = rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      logger.warn(`Login failed for email: ${email} - Invalid credentials`);
       return res.status(400).json({ ok: false, statusCode: 400, message: 'Invalid credentials' });
     }
 
@@ -32,19 +36,21 @@ router.post('/login', async (req, res) => {
 
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30m' }, (err, token) => {
       if (err) {
-        console.error(err.message);
+        logger.error(err.message);
         return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
       }
+      logger.info(`Login successful for email: ${email}`);
       return res.status(200).json({ ok: true, statusCode: 200, token });
     });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
 // GET /cm-users with pagination, sorting, and search
 router.get('/cm-users', auth, async (req, res) => {
+  logger.info('GET /cm-users', { query: req.query });
   try {
     const {
       page = '1',
@@ -77,7 +83,7 @@ router.get('/cm-users', auth, async (req, res) => {
     const total = countRows[0]?.total || 0;
 
     const dataSql = `SELECT * FROM user ${where} ORDER BY ${sortBy} ${sortOrder} LIMIT ? OFFSET ?`;
-    // console.log(dataSql, [...params, limitNum, offset]);
+    // logger.info(dataSql, [...params, limitNum, offset]);
     const dataParams = [...params, limitNum, offset];
     const [rows] = await db.query(dataSql, dataParams);
 
@@ -91,7 +97,7 @@ router.get('/cm-users', auth, async (req, res) => {
       totalPages: Math.ceil(total / limitNum)
     });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
@@ -105,12 +111,13 @@ router.get('/cm-users', auth, async (req, res) => {
 //     const [result] = await db.query('INSERT INTO account (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
 //     res.json({ id: result.insertId, name, email });
 //   } catch (err) {
-//     console.error(err.message);
+//     logger.error(err.message);
 //     res.status(500).send('Server error');
 //   }
 // });
 
 router.post('/cm-users', auth, async (req, res) => {
+  logger.info('POST /cm-users', { body: req.body });
   const { name, hospcode, cid, contact, address } = req.body;
 
   if (name == null) return res.status(400).json({ ok: false, statusCode: 400, message: 'name is null' });
@@ -153,13 +160,14 @@ router.post('/cm-users', auth, async (req, res) => {
       user_status
     });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
 // PUT /cm-users/:id
 router.put('/cm-users/:id', auth, async (req, res) => {
+  logger.info(`PUT /cm-users/${req.params.id}`, { body: req.body });
   try {
     const body = req.body || {};
     const name = body.NAME ?? body.name;
@@ -204,13 +212,14 @@ router.put('/cm-users/:id', auth, async (req, res) => {
 
     return res.status(200).json({ ok: true, statusCode: 200, message: 'User updated' });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
 // GET /hospitals with pagination, sorting, and search
 router.get('/hospitals', auth, async (req, res) => {
+  logger.info('GET /hospitals', { query: req.query });
   try {
     const {
       page = '1',
@@ -256,13 +265,14 @@ router.get('/hospitals', auth, async (req, res) => {
       totalPages: Math.ceil(total / limitNum)
     });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
 // POST /hospitals
 router.post('/hospitals', auth, async (req, res) => {
+  logger.info('POST /hospitals', { body: req.body });
   try {
     const body = req.body || {};
     const hospcodeVal = body.HOSPCODE ?? body.hospcode;
@@ -304,13 +314,14 @@ router.post('/hospitals', auth, async (req, res) => {
     if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
       return res.status(409).json({ ok: false, statusCode: 409, message: 'HOSPCODE already exists' });
     }
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
 
 // PUT /hospitals/:hospcode
 router.put('/hospitals/:hospcode', auth, async (req, res) => {
+  logger.info(`PUT /hospitals/${req.params.hospcode}`, { body: req.body });
   try {
     const hospcodeParam = String(req.params.hospcode || '').trim();
     if (!/^[0-9]+$/.test(hospcodeParam)) {
@@ -345,7 +356,7 @@ router.put('/hospitals/:hospcode', auth, async (req, res) => {
 
     return res.status(200).json({ ok: true, statusCode: 200, message: 'Hospital updated' });
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
   }
 });
@@ -356,7 +367,7 @@ router.put('/hospitals/:hospcode', auth, async (req, res) => {
 //     await db.query('UPDATE user SET status = "deactivate" WHERE id = ?', [req.params.id]);
 //     return res.status(200).json({ ok: true, statusCode: 200, message: 'User deleted' });
 //   } catch (err) {
-//     console.error(err.message);
+//     logger.error(err.message);
 //     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
 //   }
 // });
