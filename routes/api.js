@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const dbNcd = require('../config/db-ncd');
 const auth = require('../middleware/authMiddleware');
 const uuid = require('uuid');
 const logger = require('../utils/logger');
@@ -376,5 +377,60 @@ router.put('/hospitals/:hospcode', auth, async (req, res) => {
 //     return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
 //   }
 // });
+
+// PUT /config/maintenance - update maintenance mode (0 or 1) in another DB
+router.put('/config/maintenance', auth, async (req, res) => {
+  try {
+    const maintenance = req.body.maintenance;
+    if (maintenance == null) {
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'maintenance is null' });
+    }
+
+    const valStr = String(maintenance).trim();
+    if (!/^(0|1)$/.test(valStr)) {
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'maintenance must be 0 or 1' });
+    }
+
+    const [result] = await dbNcd.query('UPDATE config SET MAINTANCE = ?', [valStr]);
+
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, statusCode: 404, message: 'No config rows updated' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      statusCode: 200,
+      maintenance: Number(valStr),
+      message: 'Maintenance updated'
+    });
+  } catch (err) {
+    logger.error(err.message);
+    return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
+  }
+});
+
+// GET /config/maintenance - check maintenance status
+router.get('/config/maintenance', async (req, res) => {
+  try {
+    const [rows] = await dbNcd.query('SELECT MAINTANCE FROM config LIMIT 1');
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ ok: false, statusCode: 404, message: 'No config rows found' });
+    }
+
+    const valStr = String(rows[0]?.MAINTANCE ?? '').trim();
+    if (!/^(0|1)$/.test(valStr)) {
+      return res.status(500).json({ ok: false, statusCode: 500, message: 'Invalid MAINTANCE value' });
+    }
+
+    const maintenance = Number(valStr);
+    const message = maintenance === 1 ? 'Server is Maintenance' : 'Server is online';
+
+    return res.status(200).json({ ok: true, statusCode: 200, maintenance, message });
+  } catch (err) {
+    logger.error(err.message);
+    return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
+  }
+});
 
 module.exports = router;
