@@ -410,7 +410,7 @@ router.put('/config/maintenance', auth, async (req, res) => {
   }
 });
 
-router.put('/config/maintenance', auth, async (req, res) => {
+router.put('/config/maintenance/scale-up', auth, async (req, res) => {
   try {
     const maintenance = req.body.maintenance;
     if (maintenance == null) {
