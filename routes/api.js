@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const dbNcd = require('../config/db-ncd');
+const dbNcdScaleUp = require('../config/db-ncd-scale-up');
 const auth = require('../middleware/authMiddleware');
 const uuid = require('uuid');
 const logger = require('../utils/logger');
@@ -392,6 +393,36 @@ router.put('/config/maintenance', auth, async (req, res) => {
     }
 
     const [result] = await dbNcd.query('UPDATE config SET MAINTANCE = ?', [valStr]);
+
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, statusCode: 404, message: 'No config rows updated' });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      statusCode: 200,
+      maintenance: Number(valStr),
+      message: 'Maintenance updated'
+    });
+  } catch (err) {
+    logger.error(err.message);
+    return res.status(500).json({ ok: false, statusCode: 500, message: 'Server error' });
+  }
+});
+
+router.put('/config/maintenance', auth, async (req, res) => {
+  try {
+    const maintenance = req.body.maintenance;
+    if (maintenance == null) {
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'maintenance is null' });
+    }
+
+    const valStr = String(maintenance).trim();
+    if (!/^(0|1)$/.test(valStr)) {
+      return res.status(400).json({ ok: false, statusCode: 400, message: 'maintenance must be 0 or 1' });
+    }
+
+    const [result] = await dbNcdScaleUp.query('UPDATE config SET MAINTANCE = ?', [valStr]);
 
     if (!result || result.affectedRows === 0) {
       return res.status(404).json({ ok: false, statusCode: 404, message: 'No config rows updated' });
